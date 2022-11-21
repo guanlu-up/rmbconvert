@@ -56,6 +56,8 @@ class Traditional(object):
 
     def to_number(self):
         """
+        :return: 返回转换后的数字金额
+
         --------------实现方式--------------
         >: 叁拾贰亿伍仟零捌拾万壹仟叁佰玖拾元整
         >: [(叁 * 拾) (贰) (亿) (伍  * 仟) (捌 * 拾) (万) (壹 * 仟) (叁 * 佰) (玖 * 拾)]
@@ -121,22 +123,23 @@ class Traditional(object):
         mul = []
         start_index = 0
         while True:
-            max_index = groups.index(max(groups[start_index:]))
-            add = sum(groups[start_index:max_index])
+            surplus = groups[start_index:]
+            max_index = surplus.index(max(surplus))
+            add = sum(surplus[:max_index])
             if add != 0:
-                mul.append(add * groups[max_index])
+                mul.append(add * surplus[max_index])
             else:
-                mul.append(groups[max_index])
-            if (len(groups) - 1) == max_index:
+                mul.append(surplus[max_index])
+            if (len(groups) - 1) <= start_index:
                 break
-            start_index = max_index + 1
+            start_index += max_index + 1
 
         return sum(mul)
 
     @staticmethod
     def _convert_decimal(amount: str):
         """转换小数部分"""
-        result = 0.0
+        result = 0
         mul = None
 
         for unit in amount:
