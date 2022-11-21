@@ -5,7 +5,9 @@ def test_traditional(values: list):
     for value in values:
         rmb = Traditional(value)
         integer = rmb.to_number()
-        print("原始大写金额: [{}]  转换后的小写金额: [{}]".format(value, integer))
+        normal = rmb.to_normal()
+        message = """原始金额: {:25s} to normal: {:25s} to number: {:20s}  """
+        print(message.format(value, normal, str(integer)))
 
 
 upper_values = [
@@ -16,7 +18,7 @@ upper_values = [
     "壹仟壹佰壹拾壹万壹仟壹佰壹拾壹元壹角壹分",
 ]
 
-line = "*" * 20
+line = "*" * 30
 print(line, "大写转小写", line)
 test_traditional(upper_values)
 print("\n")
