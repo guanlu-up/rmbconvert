@@ -54,18 +54,20 @@ class Traditional(object):
     def __init__(self, amount: str):
         self.value = amount
 
-    def to_number(self):
-        """
-        :return: 返回转换后的数字金额
+    def to_normal(self):
+        """返回转换后的正常大写金额"""
 
-        --------------实现方式--------------
-        >: 叁拾贰亿伍仟零捌拾万壹仟叁佰玖拾元整
-        >: [(叁 * 拾) (贰) (亿) (伍  * 仟) (捌 * 拾) (万) (壹 * 仟) (叁 * 佰) (玖 * 拾)]
-        >: [30, 2, 100000000, 5000, 80, 10000, 1000, 300, 90]
-        >: [((30 + 2) * 100000000) + ((5000 + 80) * 10000) + 1000 + 300 + 90]
-        >: [3200000000 + 50800000 + 1000 + 300 + 90]
-        >: 3250801390
-        """
+        strings = []
+        upper_units = dict(**constants.UNIT_UPPER, **constants.DIGIT_UPPER)
+        normal_units = dict(**constants.UNIT_NORMAL, **constants.DIGIT_NORMAL)
+        mapping = dict(zip(upper_units.keys(), normal_units.keys()))
+
+        for unit in self.value:
+            strings.append(mapping.get(unit, unit))
+        return "".join(strings)
+
+    def to_number(self):
+        """返回转换后的数字金额"""
 
         positive_number, fraction = self.value, None
         if "元" in self.value:
