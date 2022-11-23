@@ -1,1 +1,1 @@
-from .convert import Traditional
+from .convert import Traditional, Number
