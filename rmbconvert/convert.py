@@ -1,7 +1,9 @@
+from typing import Union
+
 from rmbconvert import constants
 
 
-__all__ = ["Traditional"]
+__all__ = ["Traditional", "Number"]
 
 
 class RMBUpper(object):
@@ -43,7 +45,7 @@ class RMBUpper(object):
 
 
 class Traditional(object):
-    """ 人民币标准的大写金额
+    """ 人民币标准大写金额的相关转换
 
     example:
         rmb = Traditional("伍佰叁拾玖万零贰拾壹元叁角伍分")
@@ -67,7 +69,16 @@ class Traditional(object):
         return "".join(strings)
 
     def to_number(self):
-        """返回转换后的数字金额"""
+        """返回转换后的数字金额
+
+        实现思路:
+            >: 叁拾贰亿伍仟零捌拾万壹仟叁佰玖拾元整
+            >: [(叁 * 拾) (贰) (亿) (伍  * 仟) (捌 * 拾) (万) (壹 * 仟) (叁 * 佰) (玖 * 拾)]
+            >: [30, 2, 100000000, 5000, 80, 10000, 1000, 300, 90]
+            >: [((30 + 2) * 100000000) + ((5000 + 80) * 10000) + 1000 + 300 + 90]
+            >: [3200000000 + 50800000 + 1000 + 300 + 90]
+            >: [3250801390]
+        """
 
         positive_number, fraction = self.value, None
         if "元" in self.value:
@@ -154,3 +165,95 @@ class Traditional(object):
                 result += (mul * carry)
 
         return result
+
+
+class Number(object):
+    """数字金额的相关转换
+
+    example:
+        rmb = Number(5390021.35)
+        print(rmb.to_traditional())
+    """
+
+    def __init__(self, amount: Union[int, float]):
+        self.value = amount
+        self._digits = {value: key for key, value in constants.DIGIT_UPPER.items()}
+        self._digits.update({0: '零'})
+
+    def to_traditional(self):
+        """返回转换后的标准人民币大写金额
+
+        实现思路:
+            利用函数的递归调用动态的解析数值
+
+            >: 12345678
+            >: [12340000, 5000, 600, 70, 8]
+            >: [((1000 + 200 + 30 + 4) * (10000)) + (5000) + (600) + (70) + (8)]
+            >: [((壹仟 + 贰佰 + 叁拾 + 肆) * (壹万)) + (伍仟) + (陆佰) + (柒拾) + (捌)]
+            >: [壹仟贰佰叁拾肆万伍仟陆佰柒拾捌]
+        """
+
+        amount = str(int(self.value))
+
+        _integer = self._analysis_integer(amount)
+        if isinstance(self.value, int) or self.value.is_integer():
+            return _integer + "整"
+        _decimal = self._analysis_decimal(str(self.value).split(".")[-1])
+        return _integer + _decimal
+
+    def to_normal(self):
+        traditional = self.to_traditional()
+        rmb = Traditional(traditional)
+        return rmb.to_normal()
+
+    def _analysis_integer(self, value: str):
+        strings = []
+        max_unit_key = 1
+
+        if int(value) == 0:
+            return "零元"
+        if value.startswith("0"):
+            value = value.lstrip("0")
+            strings.append(self._digits.get(0))
+
+        # 获取amount的最大进位符
+        for _len in reversed(sorted(constants.LENGTH.keys())):
+            if len(value) >= _len:
+                max_unit_key = _len
+                break
+
+        if not value[:-max_unit_key]:
+            # 当最大的进位符前面没有更多的数值时, 增加进位符本身
+            strings.append(self._digits.get(int(value[-max_unit_key])))
+            if strings[-1] != self._digits.get(0):
+                strings.append(constants.LENGTH.get(max_unit_key))
+        else:
+            # 当最大的进位符前面仍有数值时, 将数值取出并再次调用函数本身, 并把结果插入到最前面
+            prefix = self._analysis_integer(value[:-max_unit_key + 1])
+            strings.insert(0, prefix.replace("元", ""))
+            strings.append(constants.LENGTH.get(max_unit_key))
+
+        # 如果进位符单位为`元`或子级数值全部为0时则直接返回
+        if max_unit_key == 1 or value[-max_unit_key + 1:] == "".zfill(len(value[-max_unit_key + 1:])):
+            if strings[-1] != "元":
+                strings.append("元")
+            return "".join(strings)
+
+        value = value[-max_unit_key + 1:]
+        suffix = self._analysis_integer(value)
+        strings.append(suffix)
+
+        return "".join(strings)
+
+    def _analysis_decimal(self, value: str):
+        strings = []
+        if value[0] == "0":
+            strings.append(self._digits.get(0))
+        else:
+            strings.append(self._digits.get(int(value[0])))
+            strings.append("角")
+        if len(value) < 2:
+            return "".join(strings)
+        strings.append(self._digits.get(int(value[1])))
+        strings.append("分")
+        return "".join(strings)
