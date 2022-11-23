@@ -2,16 +2,28 @@
 
 ### - 快速使用 -
 ```python
-from rmbconvert import Traditional
+from rmbconvert import Traditional, Number
 
 rmb = Traditional("伍佰叁拾玖万零贰拾壹元叁角伍分")
 # 转换为小写金额
 print(rmb.to_number())  
 # 转换为正常的大写金额
 print(rmb.to_normal())
+
+rmb = Number(5390021.35)
+# 转换为标准大写金额
+print(rmb.to_traditional())
+```
+###  - 测试一下 - 
+```commandline
+python.exe ./test.py
+```
+```python
+import test
+test.main()
 ```
 
-### - 实现方式 -
+### - 实现思路 -
 
 - 标准大写金额转为数字
 ```text
